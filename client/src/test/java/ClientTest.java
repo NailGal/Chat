@@ -1,45 +1,39 @@
-// ServerTest.java
-
+// ClientTest.java;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import ru.netology.Server;
+import ru.netology.Client;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.*;
-import static ru.netology.Server.*;
-import static ru.netology.Server.SETTINGS_FILE;
 
-class ServerTest {
-    private static final String SETTINGS_FILE = "server/src/main/resources/settings.txt";
-    int port;
-    //private static final String SETTINGS_FILE = "/server/src/main/resources/settings.txt";
-
+class ClientTest {
     @TempDir
     Path tempDir;
 
     @Test
-    void testReadPortFromValidSettings() throws IOException {
+    void testReadValidSettingsHost() throws Exception {
         File settingsFile = tempDir.resolve("settings.txt").toFile();
-        Files.writeString(settingsFile.toPath(), "port=5588");
+        Files.writeString(settingsFile.toPath(), "host=localhost\nport=9090");
 
-        Server server = new Server();
-        port = server.readPortFromSettings(settingsFile.toString());
-        int portExpected = 5588;
+        Client client = new Client();
+        client.readSettings(settingsFile.toString());
 
-        assertEquals(portExpected, port);
+        assertEquals("localhost", client.getHost());
     }
 
     @Test
-    void testReadPortFromInvalidSettings() {
-        Server server = new Server();
-        int port = readPortFromSettings(SETTINGS_FILE);
+    void testReadValidSettingsPort() throws Exception {
+        File settingsFile = tempDir.resolve("settings.txt").toFile();
+        Files.writeString(settingsFile.toPath(), "localhost\nport=5588");
 
+        Client client = new Client();
+        client.readSettings(settingsFile.toString());
 
-        assertEquals(1234, port);
+        assertEquals(5588, client.getPort());
     }
 
     @Test
@@ -51,10 +45,10 @@ class ServerTest {
         Files.createDirectories(logPath.getParent());
 
         // Переопределяем путь к логу в сервере (важно!)
-        Server.LOG_FILE = logPath.toString();
+        Client.LOG_FILE = logPath.toString();
 
-        Server server = new Server();
-        server.logMessage("testUser", "Hello World");
+        Client client = new Client();
+        client.logMessage("testUser", "Hello World");
 
         String logContent = Files.readString(logPath);
         assertTrue(logContent.contains("testUser"));
@@ -69,16 +63,12 @@ class ServerTest {
         Files.createDirectories(logPath.getParent());
 
         // Переопределяем путь к логу в сервере (важно!)
-        Server.LOG_FILE = logPath.toString();
+        Client.LOG_FILE = logPath.toString();
 
-        Server server = new Server();
-        server.logMessage("testUser", "Hello World");
+        Client client = new Client();
+        client.logMessage("testUser", "Hello World");
 
         String logContent = Files.readString(logPath);
         assertTrue(logContent.contains("Hello World"));
     }
 }
-
-
-
-

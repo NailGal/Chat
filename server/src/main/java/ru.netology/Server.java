@@ -6,16 +6,35 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Server {
+    private volatile boolean isRunning;
     public static final String SETTINGS_FILE = "server/src/main/resources/settings.txt";
-    private static final String LOG_FILE = "server/src/main/resources/file.log";
+    public static String LOG_FILE = "server/src/main/resources/file.log";
     private static final List<ClientHandler> clients = new CopyOnWriteArrayList<>();
 
 
     public static void main(String[] args) {
-        int port = readPortFromSettings();
-        try (ServerSocket serverSocket = new ServerSocket(port)) {
+
+        Server server = new Server();
+        server.start();
+        /*try (ServerSocket serverSocket = new ServerSocket(port)) {
             System.out.println("Server started on port " + port);
             while (true) {
+                Socket clientSocket = serverSocket.accept();
+                ClientHandler clientHandler = new ClientHandler(clientSocket);
+                clients.add(clientHandler);
+                new Thread(clientHandler).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+    }
+
+    public void start() {
+        int port = readPortFromSettings(SETTINGS_FILE);
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            isRunning = true;
+            System.out.println("Server started on port " + port);
+            while (isRunning) {
                 Socket clientSocket = serverSocket.accept();
                 ClientHandler clientHandler = new ClientHandler(clientSocket);
                 clients.add(clientHandler);
@@ -26,8 +45,12 @@ public class Server {
         }
     }
 
-    public static int readPortFromSettings() {
-        try (Scanner scanner = new Scanner(new File(SETTINGS_FILE))) {
+    public void stop() {
+        isRunning = false;
+    }
+
+    public static int readPortFromSettings(String settingsFile) {
+        try (Scanner scanner = new Scanner(new File(settingsFile))) {
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine().trim();
                 if (line.startsWith("port=")) {
@@ -53,11 +76,12 @@ public class Server {
         clients.remove(client);
     }
 
-    private static void logMessage(String username, String message) {
+    public static void logMessage(String username, String message) {
         try (FileWriter writer = new FileWriter(LOG_FILE, true)) {
             writer.write(String.format("%s [%s] %s\n", new Date(), username, message));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
+
 }

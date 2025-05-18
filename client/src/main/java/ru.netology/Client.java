@@ -6,7 +6,7 @@ import java.util.*;
 
 public class Client {
     private static final String SETTINGS_FILE = "client/src/main/resources/settings.txt";
-    private static final String LOG_FILE = "client/src/main/resources/file.log";
+    public static String LOG_FILE = "client/src/main/resources/file.log";
     private String host;
     private int port;
     private String username;
@@ -15,7 +15,7 @@ public class Client {
         new Client().start();
     }
     public void start() {
-        readSettings();
+        readSettings(SETTINGS_FILE);
         Scanner scanner = new Scanner((System.in));
         System.out.println("host= " + host + ", port= " + port);
         System.out.print("Введите ваше имя: ");
@@ -51,9 +51,8 @@ public class Client {
         }
     }
 
-
-    private void readSettings() {
-        try (Scanner scanner = new Scanner(new File(SETTINGS_FILE))) {
+    public void readSettings(String settingsFile) {
+        try (Scanner scanner = new Scanner(new File(settingsFile))) {
             String line = String.valueOf(scanner);
             while (scanner.hasNextLine()) {
                 line = scanner.nextLine().trim();
@@ -66,19 +65,26 @@ public class Client {
             }
 
         } catch (FileNotFoundException e) {
-            System.err.println("Файл не найден. Используется данные по умолчанию: localhost: 1111");
+            System.err.println("Файл не найден. Используется данные по умолчанию: localhost: 1234");
             host = "localhost";
-            port = 1111;
+            port = 1234;
 
         }
     }
 
-
-    private void logMessage(String type, String message) {
+    public void logMessage(String type, String message) {
         try (FileWriter writer = new FileWriter(LOG_FILE, true)) {
             writer.write(String.format("%s [%s] %s\n", new Date(), type, message));
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
     }
 }

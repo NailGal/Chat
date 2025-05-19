@@ -3,6 +3,7 @@ package ru.netology;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Client {
     private static final String SETTINGS_FILE = "client/src/main/resources/settings.txt";
@@ -14,7 +15,58 @@ public class Client {
     public static void main (String [] args) {
         new Client().start();
     }
+
+
     public void start() {
+        readSettings(SETTINGS_FILE);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("host= " + host + ", port= " + port);
+        System.out.print("Введите ваше имя: ");
+        username = scanner.nextLine();
+
+        try (Socket socket = new Socket(host, port);
+             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+
+            out.println(username);
+
+            // Флаг для управления потоком чтения
+            AtomicBoolean running = new AtomicBoolean(true);
+
+            Thread readerThread = new Thread(() -> {
+                try {
+                    String message;
+                    while (running.get() && (message = in.readLine()) != null) {
+                        System.out.println(message);
+                        logMessage("Received", message);
+                    }
+                } catch (IOException e) {
+                    if (running.get()) e.printStackTrace();
+                }
+            });
+            readerThread.start();
+
+            String input;
+            while (running.get()) {
+                input = scanner.nextLine();
+                if ("/exit".equalsIgnoreCase(input)) {
+                    running.set(false); // Сигнал к остановке
+                    break;
+                }
+                out.println(input);
+                logMessage("Sent", input);
+            }
+
+            // Закрываем ресурсы явно
+            socket.close();
+            readerThread.interrupt();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /*public void start() {
         readSettings(SETTINGS_FILE);
         Scanner scanner = new Scanner((System.in));
         System.out.println("host= " + host + ", port= " + port);
@@ -49,13 +101,13 @@ public class Client {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     public void readSettings(String settingsFile) {
         try (Scanner scanner = new Scanner(new File(settingsFile))) {
-            String line = String.valueOf(scanner);
+            //String line = String.valueOf(scanner);
             while (scanner.hasNextLine()) {
-                line = scanner.nextLine().trim();
+                String line = scanner.nextLine().trim();
                 if (line.startsWith("host=")) {
                     host = line.substring(5);
                 } else if (line.startsWith("port=")) {
